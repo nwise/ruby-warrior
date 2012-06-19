@@ -3,6 +3,7 @@ class Player
 
   def initialize()
     @low_health_threshold = 7
+    @walk_direction = :forward
   end
 
   def play_turn(warrior)
@@ -23,7 +24,7 @@ class Player
       take_action(:rest!)
       return
     else
-      take_action(:walk!)
+      take_action(:walk!, @walk_direction)
       return
     end
 
@@ -61,12 +62,20 @@ class Player
     @warrior.health <= @low_health_threshold
   end
 
+  def should_pivot?
+    warrior.feel.wall?
+  end
+
   def take_action(action, params=:forward)
     @health = warrior.health
     @last_action = action
     case action
     when :walk!
-      warrior.walk!(params)
+      if should_pivot?
+        warrior.pivot!
+      else
+        warrior.walk!(params)
+      end
     when :attack!
       warrior.attack!(params)
     when :rest!
