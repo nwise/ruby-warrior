@@ -2,29 +2,39 @@ class Player
   attr_reader :warrior
 
   def initialize()
-    @low_health_threshold = 7
+    @low_health_threshold = 12
     @walk_direction = :forward
+    @last_attacked_by = :none
+    @health = 20
+    @did_wait = false
   end
 
   def play_turn(warrior)
     @warrior = warrior
+
     if can_rescue?
       take_action(:rescue!, @rescue_direction)
       return
-    elsif danger_ahead? && low_health?
-      take_action(:walk!, :backward)
-      return
-    elsif danger_ahead?
-      take_action(:walk!, :forward)
+    elsif ranged_enemy?
+      take_action(:shoot!, :forward)
       return
     elsif facing_enemy?
       take_action(:attack!, :forward)
       return
+    elsif ranged_enemy? and low_health?
+      take_action(:walk!, :backward)
+      return
+    elsif low_health?
+      take_action(:walk!, :backward)
+      return
     elsif hurt?
       take_action(:rest!)
       return
-    else
+    elsif did_wait?
       take_action(:walk!, @walk_direction)
+      return
+    else
+      @did_wait = true
       return
     end
 
@@ -42,7 +52,7 @@ class Player
     return can_rescue
   end
 
-  def danger_ahead?
+  def ranged_enemy?
     been_attacked? and !facing_enemy?
   end
 
@@ -66,6 +76,27 @@ class Player
     warrior.feel.wall?
   end
 
+  def health_lost
+    @health - @warrior.health
+  end
+
+  def last_attacked_by
+    case health_lost
+    when 9
+      :wizard
+    when 3
+      :archer
+    when 3
+      :sludge
+    else
+      :none
+    end
+  end
+
+  def did_wait?
+    @did_wait
+  end
+
   def take_action(action, params=:forward)
     @health = warrior.health
     @last_action = action
@@ -84,6 +115,9 @@ class Player
       warrior.shoot!(params)
     when :rescue!
       warrior.rescue!(params)
+    when :bind!
+      @did_wait = true
+      warrior.bind!
     else
       raise "No action taken"
     end
