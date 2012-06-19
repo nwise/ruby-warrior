@@ -1,13 +1,20 @@
 class Player
   attr_reader :warrior
 
+  def initialize()
+    @low_health_threshold = 7
+  end
+
   def play_turn(warrior)
     @warrior = warrior
     if can_rescue?
       take_action(:rescue!, @rescue_direction)
       return
-    elsif danger_ahead?
+    elsif danger_ahead? && low_health?
       take_action(:walk!, :backward)
+      return
+    elsif danger_ahead?
+      take_action(:walk!, :forward)
       return
     elsif facing_enemy?
       take_action(:attack!, :forward)
@@ -48,6 +55,10 @@ class Player
 
   def hurt?
     warrior.health < 20
+  end
+
+  def low_health?
+    @warrior.health <= @low_health_threshold
   end
 
   def take_action(action, params=:forward)
