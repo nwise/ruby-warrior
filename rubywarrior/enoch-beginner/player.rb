@@ -2,39 +2,52 @@ class Player
   attr_reader :warrior
 
   def initialize()
-    @low_health_threshold = 12
+    @low_health_threshold = 11
     @walk_direction = :forward
     @last_attacked_by = :none
     @health = 20
-    @did_wait = false
+    @should_wait = false
+    @attacked_last_round = false
+    @rescued_last_round = false
+    @shot_last_round = false
   end
 
   def play_turn(warrior)
     @warrior = warrior
 
+
     if can_rescue?
+      @should_wait = true
+      @rescued_last_round = true
       take_action(:rescue!, @rescue_direction)
       return
+    elsif low_health? and @shot_last_round
+      @shot_last_round = false
+      take_action(:walk!, :backward)
+      return
+    elsif should_wait? == true
+      @should_wait = false
+      return
     elsif ranged_enemy?
+      @shot_last_round = true
       take_action(:shoot!, :forward)
       return
     elsif facing_enemy?
       take_action(:attack!, :forward)
       return
     elsif ranged_enemy? and low_health?
+      puts 'ranged && low health'
       take_action(:walk!, :backward)
       return
-    elsif low_health?
-      take_action(:walk!, :backward)
-      return
+    #elsif low_health?
+    #  puts 'low_healh'
+    #  take_action(:walk!, :backward)
+    #  return
     elsif hurt?
       take_action(:rest!)
       return
-    elsif did_wait?
-      take_action(:walk!, @walk_direction)
-      return
     else
-      @did_wait = true
+      take_action(:walk!, :forward)
       return
     end
 
@@ -74,6 +87,10 @@ class Player
 
   def should_pivot?
     warrior.feel.wall?
+  end
+
+  def should_wait?
+    @should_wait
   end
 
   def health_lost
